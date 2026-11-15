@@ -25,7 +25,7 @@ La receta no le esconde nada a tu persona de confianza: le esconde tu petición 
 
 - Contestar con un mensaje **neutral**, acordado de antemano, que no te delate si alguien lee tu chat.
 - Si te envías la ubicación, usarla **solo como información**.
-- Si hay peligro inmediato, **contactar a los servicios de ayuda locales** (los teléfonos están en Bienestar, dentro de la app).
+- Si hay peligro inmediato, **contactar a los servicios de ayuda locales** (los teléfonos están en el área de apoyo de la app, que se abre desde la calculadora con el PIN creado durante la configuración).
 - Seguir lo que ustedes acordaron aquí, aunque el mensaje sea corto.
 
 ## 4. Qué **NO** hará tu persona de confianza
@@ -45,7 +45,7 @@ La receta no le esconde nada a tu persona de confianza: le esconde tu petición 
 
 - ¿Qué hace ella si no recibe respuesta? (Acuerden un plan: otra persona de confianza, otro canal, los teléfonos de apoyo.)
 - ¿Qué hace si la situación cambia o si ya no necesita ayuda? (Un mensaje acordado para avisar.)
-- Revisen el acuerdo cada cierto tiempo. Puedes **cambiar a tus contactos** cuando quieras desde la configuración.
+- Revisen el acuerdo cada cierto tiempo. Para actualizar contactos o PIN, abre el área de apoyo desde la calculadora e ingresa a la configuración. No escribas el PIN ni el acuerdo en un lugar que pueda ser revisado.
 
 ## Para la facilitadora (checklist)
 
@@ -53,7 +53,9 @@ La receta no le esconde nada a tu persona de confianza: le esconde tu petición 
 - [ ] Ayudar a elegir al menos dos contactos fuera del entorno de riesgo.
 - [ ] Acordar la receta de confianza y su significado.
 - [ ] Practicar el flujo: configuración, **Salir rápido**, compartir y revisar el mensaje antes de enviar.
-- [ ] Explicar cómo volver a la configuración (en persona, no por escrito).
+- [ ] Practicar cómo abrir el apoyo desde la calculadora con el PIN, y cómo volver al recetario.
+- [ ] Explicar que el PIN es una barrera de discreción, no una protección técnica del dispositivo.
+- [ ] Explicar el límite del temporizador: solo avisa con la app abierta y nunca envía mensajes o ubicación automáticamente.
 - [ ] Recomendar mensajes temporales en el chat.
 - [ ] Dar los teléfonos de apoyo y explicar cuándo usarlos.
 - [ ] Recordar que **nada se anota ni se lleva a casa**.

@@ -1,11 +1,13 @@
 import { validateContact } from '../utils/validation.js';
+import { createPinRecord, verifyPin } from '../utils/pin.js';
 
 const KEYS = {
   favorites: 'camuflaje.favorites',
   profile: 'camuflaje.profile',
   theme: 'camuflaje.theme',
   preferences: 'camuflaje.preferences',
-  setupCompleted: 'camuflaje.setupCompleted'
+  setupCompleted: 'camuflaje.setupCompleted',
+  supportPin: 'camuflaje.portions'
 };
 
 function readJSON(key, fallback) {
@@ -27,7 +29,13 @@ export function loadSettings() {
   const preferences = readJSON(KEYS.preferences, {});
   const savedTheme = localStorage.getItem(KEYS.theme);
   const setupCompleted = readJSON(KEYS.setupCompleted, false) === true;
-  const hasPriorUse = [KEYS.favorites, KEYS.profile, KEYS.theme, KEYS.preferences, 'fav', 'trust', 'contacts']
+  const supportPin = readJSON(KEYS.supportPin, null);
+  const hasSupportPin = Boolean(
+    supportPin
+      && typeof supportPin.salt === 'string' && /^[\da-f]{32}$/.test(supportPin.salt)
+      && typeof supportPin.hash === 'string' && /^[\da-f]{64}$/.test(supportPin.hash)
+  );
+  const hasPriorUse = [KEYS.favorites, KEYS.profile, KEYS.theme, KEYS.preferences, KEYS.supportPin, 'fav', 'trust', 'contacts']
     .some((key) => localStorage.getItem(key) !== null);
   if (favorites === null) favorites = readJSON('fav', []);
   if (profile === null) {
@@ -45,6 +53,7 @@ export function loadSettings() {
       : [],
     setupCompleted,
     hasPriorUse,
+    hasSupportPin,
     preferences: {
       theme: preferences?.theme === 'dark' || preferences?.theme === 'light'
         ? preferences.theme
@@ -97,9 +106,24 @@ export function saveProfile(profile) {
   }
 }
 
+export async function saveSupportPin(pin) {
+  const record = await createPinRecord(pin);
+  try {
+    localStorage.setItem(KEYS.supportPin, JSON.stringify(record));
+  } catch (error) {
+    throw new Error('No se pudo guardar el acceso privado en este dispositivo.', { cause: error });
+  }
+}
+
+export async function verifySupportPin(pin) {
+  const record = readJSON(KEYS.supportPin, null);
+  if (!record) return false;
+  return verifyPin(pin, record);
+}
+
 export function clearAppData() {
   try {
-    for (const key of [KEYS.favorites, KEYS.profile, KEYS.theme, KEYS.preferences]) localStorage.removeItem(key);
+    for (const key of [KEYS.favorites, KEYS.profile, KEYS.theme, KEYS.preferences, KEYS.supportPin]) localStorage.removeItem(key);
     for (const key of ['fav', 'trust', 'contacts']) localStorage.removeItem(key);
   } catch (error) {
     throw new Error('No se pudieron borrar los datos de esta aplicación.', { cause: error });

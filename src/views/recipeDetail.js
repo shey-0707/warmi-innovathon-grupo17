@@ -20,6 +20,16 @@ export function renderRecipeDetail(state) {
   const contacts = state.profile.contacts;
   let modal = '';
   const shareDraft = state.shareDraft?.recipeId === recipe.id ? state.shareDraft : null;
+  const portionResults = state.portionResults?.recipeId === recipe.id ? state.portionResults : null;
+  if (state.modal === 'portion-calculator') {
+    modal = renderModal('Calculadora de porciones', `<p>La receta rinde ${recipe.servings} porciones. Indica cuántas necesitas para ajustar las cantidades.</p>
+      <form class="portion-form" data-form="portion-calculator" data-recipe-id="${escapeHTML(recipe.id)}">
+        <label for="portion-count">Porciones deseadas</label>
+        <input class="field" id="portion-count" name="servings" type="text" inputmode="numeric" pattern="[0-9]{1,6}" maxlength="6" value="${escapeHTML(state.portionInput || String(recipe.servings))}" required>
+        <button class="button full" type="submit">Ajustar cantidades</button>
+      </form>
+      ${portionResults ? `<p class="note">Cantidades para ${portionResults.servings} porciones:</p><ul class="portion-results">${portionResults.ingredients.map((item) => `<li>${escapeHTML(item)}</li>`).join('')}</ul>` : ''}`);
+  }
   if (shareDraft?.mode === 'location' && shareDraft.url) {
     modal = renderModal('Revisa el mensaje', `<p class="note">Comprueba el destinatario y el enlace de ubicación antes de abrir WhatsApp.</p>
       <div class="share-recipient-note">${renderIcon('message')}<span>WhatsApp para <strong>${escapeHTML(shareDraft.contactName)}</strong></span></div>
@@ -52,10 +62,20 @@ export function renderRecipeDetail(state) {
     <img class="recipe-detail-image" src="${escapeHTML(recipe.image)}" alt="${escapeHTML(recipe.name)}">
     <h2>${escapeHTML(recipe.name)}</h2>
     <p class="recipe-meta">${renderIcon('clock')}<span>${escapeHTML(recipe.time)} · ${recipe.servings} porciones · ${escapeHTML(recipe.difficulty)}</span></p>
+    <section class="timer-panel" aria-label="Temporizador de cocina">
+      <form class="timer-form" data-form="checkin-timer" data-recipe-id="${escapeHTML(recipe.id)}">
+        <label for="timer-minutes">Temporizador de cocina (minutos)</label>
+        <div class="timer-controls"><input class="field" id="timer-minutes" name="minutes" type="number" min="1" max="180" value="30" required>
+          <button class="button secondary" type="submit">Iniciar</button></div>
+      </form>
+      ${state.timerDeadline ? '<p class="timer-countdown" role="timer">Tiempo restante: <strong id="timer-countdown">00:00</strong></p>' : ''}
+      <p class="note">El aviso aparece solo si el recetario permanece abierto; no se envían mensajes ni se consulta la ubicación automáticamente.</p>
+    </section>
     ${isTrustedRecipe ? '<p class="banner">Esta es tu receta de confianza elegida durante la configuración.</p>' : ''}
     <h3 class="section-title">Ingredientes</h3><ul>${recipe.ingredients.map((item) => `<li>${escapeHTML(item)}</li>`).join('')}</ul>
     <h3 class="section-title">Preparación</h3><ol>${recipe.steps.map((item) => `<li>${escapeHTML(item)}</li>`).join('')}</ol>
     <div class="action-row">
+      <button class="button secondary" type="button" data-action="open-portion-calculator" data-id="${escapeHTML(recipe.id)}">Calculadora de porciones</button>
       <button class="button secondary" type="button" data-action="toggle-favorite" data-id="${escapeHTML(recipe.id)}" aria-pressed="${state.favorites.includes(recipe.id)}">${state.favorites.includes(recipe.id) ? '♥ En favoritas' : '♡ Agregar a favoritas'}</button>
       <button class="button" type="button" data-action="open-share" data-id="${escapeHTML(recipe.id)}">${renderIcon('share')} Compartir receta</button>
     </div>

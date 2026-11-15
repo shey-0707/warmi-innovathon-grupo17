@@ -3,7 +3,7 @@ import './assets/styles/components.css';
 import './assets/styles/responsive.css';
 import { recipes } from './data/recipes.js';
 import { appState, resetTransientState } from './state/appState.js';
-import { loadSettings, markSetupCompleted, saveFavorites, saveProfile, savePreferences, clearAppData } from './services/storage.js';
+import { loadSettings, markSetupCompleted, saveFavorites, saveProfile, savePreferences, saveSupportPin, verifySupportPin, clearAppData } from './services/storage.js';
 import { getCurrentLocation } from './services/geolocation.js';
 import { contactMessageText, contactMessageURL, shareRecipe } from './services/sharing.js';
 import { renderMap, destroyMap } from './services/map.js';
@@ -18,7 +18,6 @@ import { renderRecipeDetail } from './views/recipeDetail.js';
 import { renderSafePoints } from './views/safePoints.js';
 import { renderWellbeing } from './views/wellbeing.js';
 import { renderSetup } from './views/setup.js';
-import { renderDemo } from './views/demo.js';
 import { escapeHTML } from './utils/security.js';
 import { validateContacts } from './utils/validation.js';
 
@@ -33,19 +32,19 @@ const titles = {
 
 let deferredInstallPrompt = null;
 let initialSetupRequired = false;
-let returnToSetupAfterDemo = false;
-let secretTitleTapCount = 0;
-let lastSecretTitleTap = 0;
+let lastSensitiveActivity = Date.now();
+let setupTapCount = 0;
+let setupTapTimeout = null;
 
 try {
   const settings = loadSettings();
   appState.favorites = settings.favorites;
   appState.profile = settings.profile;
   appState.preferences = settings.preferences;
-  const returningUser = settings.setupCompleted || settings.hasPriorUse || Boolean(navigator.serviceWorker?.controller);
-  initialSetupRequired = !returningUser;
+  const returningUser = settings.setupCompleted || settings.hasPriorUse;
+  const hasExistingProfile = Boolean(settings.profile.trustedRecipeId || settings.profile.contacts.length);
+  initialSetupRequired = !settings.setupCompleted || (hasExistingProfile && !settings.hasSupportPin);
   if (returningUser && !settings.setupCompleted) markSetupCompleted();
-  if (!returningUser) markSetupCompleted();
 } catch (error) {
   console.error(error);
   appState.storageError = error.message;
@@ -72,13 +71,6 @@ function renderSettings() {
         </select>
       </label>
     </div>
-    <div class="wellbeing-preference">
-      <p>Orientación y recursos</p>
-      <button class="wellbeing-entry" type="button" data-action="open-wellbeing">
-        <span><strong>Bienestar y apoyo</strong><small>Artículos, teléfonos y asistente</small></span>
-        <span class="wellbeing-entry-arrow" aria-hidden="true">›</span>
-      </button>
-    </div>
     <button class="button secondary" type="button" data-action="clear-favorites">Limpiar favoritas</button>
     <button class="button secondary theme-toggle" type="button" data-action="toggle-theme" aria-label="${isDark ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro'}">${renderIcon(isDark ? 'sun' : 'moon')}</button>
     ${deferredInstallPrompt ? '<button class="button secondary" type="button" data-action="install-app">Instalar aplicación</button>' : '<p class="note">Para instalar: usa la opción del navegador “Añadir a pantalla de inicio”, si está disponible.</p>'}
@@ -98,12 +90,6 @@ function renderApp() {
     return;
   }
 
-  if (appState.mode === 'demo') {
-    root.innerHTML = renderDemo(appState);
-    destroyMap();
-    return;
-  }
-
   let title = appState.recipeId
     ? ['Receta', '']
     : (titles[appState.tab] ?? titles.home);
@@ -119,15 +105,20 @@ function renderApp() {
       shop: () => renderSafePoints(appState),
       well: () => renderWellbeing(appState)
     }[appState.tab] ?? (() => renderHome(appState)))();
-  const modal = appState.modal === 'settings' ? renderSettings() : '';
+  let modal = appState.modal === 'settings' ? renderSettings() : '';
+  if (appState.modal === 'timer-reminder') {
+    modal = renderModal('¿Ya está lista?', `<p>El temporizador terminó. Si todavía necesitas compartir algo, puedes revisar una receta y decidir qué hacer.</p>
+      <button class="button full" type="button" data-action="timer-done">Ya está lista</button>
+      <button class="button secondary full share-open-button" type="button" data-action="timer-share">Compartir receta</button>`);
+  }
 
-  const header = appState.tab === 'well' && appState.preferencesReturn
-    ? '<header class="wellbeing-backbar"><button class="wellbeing-back-button" type="button" data-action="back-to-preferences">‹ Preferencias</button></header>'
-    : `<header class="topbar"><div><h1 ${!appState.recipeId && appState.tab === 'home' ? 'data-secret-title' : ''}>${escapeHTML(title[0])}</h1>${title[1] ? `<p>${escapeHTML(title[1])}</p>` : ''}</div>
+  const header = appState.tab === 'well'
+    ? '<header class="wellbeing-backbar"><button class="wellbeing-back-button" type="button" data-action="exit-wellbeing">‹ Volver al recetario</button></header>'
+    : `<header class="topbar"><div><h1${appState.tab === 'home' && !appState.recipeId ? ' data-action="secret-setup"' : ''}>${escapeHTML(title[0])}</h1>${title[1] ? `<p>${escapeHTML(title[1])}</p>` : ''}</div>
       <button class="icon-button" type="button" data-action="open-settings" aria-label="Preferencias">⚙</button>
     </header>`;
 
-  root.innerHTML = `${header}${content}${renderNavigation(appState.tab)}${modal}`;
+  root.innerHTML = `${header}${content}${appState.tab === 'well' ? '' : renderNavigation(appState.tab)}${modal}`;
 
   if (appState.tab === 'shop' && !appState.recipeId) {
     try {
@@ -149,13 +140,15 @@ function renderApp() {
 function navigateToApp() {
   initialSetupRequired = false;
   appState.mode = 'app';
+  appState.supportUnlocked = false;
   appState.modal = null;
   appState.shareDraft = null;
   appState.setupStep = 0;
   appState.setupRecipeId = null;
   appState.setupContacts = [{ name: '', phone: '' }, { name: '', phone: '' }];
   appState.setupError = '';
-  appState.setupFromSecret = false;
+  appState.setupPin = '';
+  appState.setupPinConfirm = '';
   history.replaceState(null, '', `${location.pathname}${location.search}`);
   renderApp();
 }
@@ -169,43 +162,23 @@ function startSetup() {
     () => ({ name: '', phone: '' })
   )].slice(0, contactCount);
   appState.setupError = '';
+  appState.setupPin = '';
+  appState.setupPinConfirm = '';
 }
 
 function route() {
   const hash = location.hash;
-  if (hash === '#setup') {
-    if (appState.mode !== 'setup') {
-      startSetup();
-      appState.setupFromSecret = true;
-    }
-    appState.mode = 'setup';
-  } else if (hash === '#demo') {
-    returnToSetupAfterDemo = appState.mode === 'setup';
-    appState.mode = 'demo';
-    appState.demoStep = 0;
-  } else if (initialSetupRequired) {
+  if (initialSetupRequired) {
     if (appState.mode !== 'setup') startSetup();
     appState.mode = 'setup';
   } else {
     appState.mode = 'app';
+    if (hash === '#setup' || hash === '#demo') {
+      history.replaceState(null, '', `${location.pathname}${location.search}`);
+    }
   }
   appState.modal = null;
   appState.location = null;
-  renderApp();
-}
-
-function openHiddenSetup() {
-  secretTitleTapCount = 0;
-  startSetup();
-  appState.setupFromSecret = true;
-  appState.mode = 'setup';
-  try {
-    markSetupCompleted();
-  } catch (error) {
-    console.error(error);
-    showToast(error.message);
-  }
-  history.replaceState(null, '', `${location.pathname}${location.search}#setup`);
   renderApp();
 }
 
@@ -284,7 +257,6 @@ async function handleClick(event) {
   switch (action) {
     case 'navigate':
       if (appState.tab === 'shop' && target.dataset.tab !== 'shop') appState.location = null;
-      appState.preferencesReturn = null;
       appState.tab = target.dataset.tab;
       appState.recipeId = null;
       appState.selectedPoint = null;
@@ -309,36 +281,69 @@ async function handleClick(event) {
       appState.category = target.dataset.category;
       renderApp();
       break;
+    case 'secret-setup':
+      if (appState.mode !== 'app' || appState.tab !== 'home' || appState.recipeId || initialSetupRequired) break;
+      setupTapCount += 1;
+      window.clearTimeout(setupTapTimeout);
+      if (setupTapCount >= 5) {
+        setupTapCount = 0;
+        startSetup();
+        appState.mode = 'setup';
+        appState.modal = null;
+        lastSensitiveActivity = Date.now();
+        renderApp();
+        window.scrollTo(0, 0);
+      } else {
+        setupTapTimeout = window.setTimeout(() => { setupTapCount = 0; }, 3000);
+      }
+      break;
     case 'toggle-favorite':
       toggleFavorite(target.dataset.id);
       break;
     case 'open-settings':
       appState.modal = 'settings';
+      lastSensitiveActivity = Date.now();
       renderApp();
       break;
-    case 'open-wellbeing':
-      appState.preferencesReturn = { tab: appState.tab, recipeId: appState.recipeId };
-      if (appState.tab === 'shop') {
-        appState.location = null;
-        appState.selectedPoint = null;
-      }
-      appState.tab = 'well';
+    case 'exit-wellbeing':
+      appState.tab = 'home';
       appState.recipeId = null;
       appState.modal = null;
-      appState.shareDraft = null;
       appState.chat = [];
+      appState.supportUnlocked = false;
+      appState.shareDraft = null;
       renderApp();
-      document.querySelector('[data-action="back-to-preferences"]')?.focus();
       window.scrollTo(0, 0);
       break;
-    case 'back-to-preferences':
-      if (!appState.preferencesReturn) break;
-      appState.tab = appState.preferencesReturn.tab;
-      appState.recipeId = appState.preferencesReturn.recipeId;
-      appState.preferencesReturn = null;
-      appState.modal = 'settings';
+    case 'edit-setup':
+      if (!appState.supportUnlocked || appState.tab !== 'well') break;
+      startSetup();
+      appState.mode = 'setup';
       renderApp();
-      document.querySelector('[data-action="open-wellbeing"]')?.focus();
+      window.scrollTo(0, 0);
+      break;
+    case 'open-portion-calculator':
+      if (!recipes.some((recipe) => recipe.id === target.dataset.id)) break;
+      appState.recipeId = target.dataset.id;
+      appState.portionInput = String(recipes.find((recipe) => recipe.id === target.dataset.id).servings);
+      appState.portionResults = null;
+      appState.modal = 'portion-calculator';
+      renderApp();
+      document.querySelector('#portion-count')?.focus();
+      break;
+    case 'timer-done':
+      appState.modal = null;
+      appState.timerDeadline = null;
+      appState.timerRecipeId = null;
+      renderApp();
+      break;
+    case 'timer-share':
+      if (!recipes.some((recipe) => recipe.id === appState.timerRecipeId)) break;
+      appState.recipeId = appState.timerRecipeId;
+      appState.shareDraft = { recipeId: appState.timerRecipeId, mode: 'recipe' };
+      appState.modal = null;
+      appState.timerRecipeId = null;
+      renderApp();
       break;
     case 'close-modal':
       appState.modal = null;
@@ -475,7 +480,15 @@ async function handleClick(event) {
         appState.setupContacts = result.contacts;
         appState.setupError = '';
       }
-      if (appState.setupStep < 3) {
+      if (appState.setupStep === 3) {
+        if (!/^\d{6}$/.test(appState.setupPin) || appState.setupPin !== appState.setupPinConfirm) {
+          appState.setupError = 'Escribe el mismo PIN de 6 dígitos en ambos campos.';
+          renderApp();
+          break;
+        }
+        appState.setupError = '';
+      }
+      if (appState.setupStep < 4) {
         appState.setupStep += 1;
         renderApp();
         break;
@@ -486,11 +499,13 @@ async function handleClick(event) {
           contacts: appState.setupContacts.filter((contact) => contact.name.trim() && contact.phone.trim())
         };
         saveProfile(appState.profile);
+        await saveSupportPin(appState.setupPin);
         const favorites = [...new Set([appState.profile.trustedRecipeId, ...appState.favorites].filter(Boolean))];
         saveFavorites(favorites);
         markSetupCompleted();
         appState.favorites = favorites;
         appState.tab = 'home';
+        initialSetupRequired = false;
         navigateToApp();
       } catch (error) {
         console.error(error);
@@ -506,24 +521,6 @@ async function handleClick(event) {
       }
       navigateToApp();
       break;
-    case 'leave-demo':
-      if (returnToSetupAfterDemo) {
-        returnToSetupAfterDemo = false;
-        history.replaceState(null, '', `${location.pathname}${location.search}#setup`);
-        appState.mode = 'setup';
-        renderApp();
-        break;
-      }
-      navigateToApp();
-      break;
-    case 'demo-previous':
-      appState.demoStep = Math.max(0, appState.demoStep - 1);
-      renderApp();
-      break;
-    case 'demo-next':
-      appState.demoStep = Math.min(2, appState.demoStep + 1);
-      renderApp();
-      break;
     case 'install-app':
       if (!deferredInstallPrompt) break;
       await deferredInstallPrompt.prompt();
@@ -534,19 +531,6 @@ async function handleClick(event) {
       break;
   }
 }
-
-root.addEventListener('click', (event) => {
-  const title = event.target.closest('[data-secret-title]');
-  if (!title) {
-    secretTitleTapCount = 0;
-    return;
-  }
-  const now = Date.now();
-  if (now - lastSecretTitleTap > 2500) secretTitleTapCount = 0;
-  lastSecretTitleTap = now;
-  secretTitleTapCount += 1;
-  if (secretTitleTapCount === 5) openHiddenSetup();
-});
 
 root.addEventListener('click', (event) => {
   handleClick(event).catch((error) => {
@@ -571,9 +555,17 @@ root.addEventListener('input', (event) => {
     target.value = digits.slice(0, 9);
     appState.setupContacts[Number(target.dataset.contactPhone)].phone = target.value;
   }
+  if (target.matches('[data-setup-pin]')) {
+    target.value = target.value.replace(/\D/g, '').slice(0, 6);
+    appState.setupPin = target.value;
+  }
+  if (target.matches('[data-setup-pin-confirm]')) {
+    target.value = target.value.replace(/\D/g, '').slice(0, 6);
+    appState.setupPinConfirm = target.value;
+  }
   if (target.matches('[data-preference="name"]')) {
     appState.preferences.name = target.value.trim().slice(0, 40);
-    const title = document.querySelector('[data-secret-title]');
+    const title = document.querySelector('.topbar h1');
     if (title) title.textContent = appState.preferences.name ? `Hola, ${appState.preferences.name}` : 'Recetario Casero';
   }
 });
@@ -606,7 +598,56 @@ root.addEventListener('change', (event) => {
   }
 });
 
-root.addEventListener('submit', (event) => {
+root.addEventListener('submit', async (event) => {
+  if (event.target.matches('[data-form="portion-calculator"]')) {
+    event.preventDefault();
+    const form = event.target;
+    const input = form.elements.servings;
+    const raw = input.value.trim();
+    appState.portionInput = raw;
+    if (!/^\d{1,6}$/.test(raw)) {
+      showToast('Escribe una cantidad de porciones válida.');
+      return;
+    }
+    const recipe = recipes.find((item) => item.id === form.dataset.recipeId);
+    if (!recipe) return;
+    if (/^\d{6}$/.test(raw)) {
+      try {
+        const valid = await verifySupportPin(raw);
+        if (valid) {
+          appState.tab = 'well';
+          appState.recipeId = null;
+          appState.modal = null;
+          appState.shareDraft = null;
+          appState.chat = [];
+          appState.supportUnlocked = true;
+          lastSensitiveActivity = Date.now();
+          renderApp();
+          window.scrollTo(0, 0);
+          return;
+        }
+      } catch (error) {
+        console.error(error);
+        showToast(error.message);
+        return;
+      }
+    }
+    showPortionResults(recipe, raw);
+    return;
+  }
+  if (event.target.matches('[data-form="checkin-timer"]')) {
+    event.preventDefault();
+    const minutes = Number(event.target.elements.minutes.value);
+    const recipeId = event.target.dataset.recipeId;
+    if (!Number.isInteger(minutes) || minutes < 1 || minutes > 180) {
+      showToast('Elige un tiempo entre 1 y 180 minutos.');
+      return;
+    }
+    appState.timerDeadline = Date.now() + minutes * 60 * 1000;
+    appState.timerRecipeId = recipeId;
+    renderApp();
+    showToast('Temporizador iniciado.');
+  }
   if (event.target.matches('[data-form="chat"]')) {
     event.preventDefault();
     const input = event.target.elements.message;
@@ -628,6 +669,61 @@ root.addEventListener('keydown', (event) => {
   }
 });
 
+function scaledIngredient(ingredient, multiplier) {
+  const match = ingredient.match(/^(\d+(?:[.,]\d+)?)(.*)$/);
+  if (!match) return ingredient;
+  const amount = Number(match[1].replace(',', '.')) * multiplier;
+  const formatted = Number.isInteger(amount) ? String(amount) : String(Number(amount.toFixed(2)));
+  const suffix = amount === 1
+    ? match[2].replace(/^(\s+)([a-záéíóúüñ]+)s(?=\s|$)/i, '$1$2')
+    : match[2];
+  return `${formatted}${suffix}`;
+}
+
+function showPortionResults(recipe, raw) {
+  const servings = Number(raw);
+  if (!Number.isInteger(servings) || servings < 1 || servings > 999999) {
+    showToast('Escribe una cantidad de porciones válida.');
+    return;
+  }
+  appState.portionResults = {
+    recipeId: recipe.id,
+    servings,
+    ingredients: recipe.ingredients.map((ingredient) => scaledIngredient(ingredient, servings / recipe.servings))
+  };
+  renderApp();
+}
+
+function isSensitiveScreen() {
+  return appState.mode === 'setup'
+    || (appState.mode === 'app' && (appState.tab === 'well' || appState.modal === 'settings'));
+}
+
+function recordSensitiveActivity() {
+  if (isSensitiveScreen()) lastSensitiveActivity = Date.now();
+}
+
+function closeInactiveScreen() {
+  appState.mode = 'app';
+  appState.tab = 'home';
+  appState.recipeId = null;
+  appState.modal = null;
+  appState.shareDraft = null;
+  appState.chat = [];
+  appState.supportUnlocked = false;
+  appState.setupStep = 0;
+  appState.setupPin = '';
+  appState.setupPinConfirm = '';
+  appState.portionResults = null;
+  history.replaceState(null, '', `${location.pathname}${location.search}`);
+  renderApp();
+}
+
+root.addEventListener('pointerdown', recordSensitiveActivity);
+root.addEventListener('input', recordSensitiveActivity);
+root.addEventListener('keydown', recordSensitiveActivity);
+root.addEventListener('change', recordSensitiveActivity);
+
 window.addEventListener('hashchange', route);
 window.addEventListener('beforeinstallprompt', (event) => {
   event.preventDefault();
@@ -637,6 +733,23 @@ window.addEventListener('beforeinstallprompt', (event) => {
 
 applyPreferences();
 route();
+setInterval(() => {
+  if (isSensitiveScreen() && Date.now() - lastSensitiveActivity >= 60000) {
+    closeInactiveScreen();
+  }
+  if (!appState.timerDeadline) return;
+  if (appState.timerDeadline <= Date.now()) {
+    appState.timerDeadline = null;
+    appState.modal = 'timer-reminder';
+    renderApp();
+    return;
+  }
+  const countdown = document.querySelector('#timer-countdown');
+  if (countdown) {
+    const seconds = Math.ceil((appState.timerDeadline - Date.now()) / 1000);
+    countdown.textContent = `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
+  }
+}, 1000);
 if (appState.storageError) showToast(appState.storageError);
 
 if (!import.meta.env.DEV && 'serviceWorker' in navigator) {

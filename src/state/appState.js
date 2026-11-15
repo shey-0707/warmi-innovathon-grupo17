@@ -9,17 +9,21 @@ export const appState = {
   showAllShops: true,
   selectedPoint: null,
   modal: null,
-  preferencesReturn: null,
   chat: [],
+  supportUnlocked: false,
   location: null,
   shareDraft: null,
   setupStep: 0,
   setupRecipeId: null,
   setupContacts: [{ name: '', phone: '' }, { name: '', phone: '' }],
   setupError: '',
-  setupFromSecret: false,
+  setupPin: '',
+  setupPinConfirm: '',
   preferences: { theme: 'light', fontSize: 'normal', recipeLayout: 'grid', name: '' },
-  demoStep: 0
+  portionInput: '',
+  portionResults: null,
+  timerDeadline: null,
+  timerRecipeId: null
 };
 
 export function resetTransientState() {
@@ -29,13 +33,18 @@ export function resetTransientState() {
   appState.query = '';
   appState.selectedPoint = null;
   appState.modal = null;
-  appState.preferencesReturn = null;
   appState.chat = [];
+  appState.supportUnlocked = false;
   appState.location = null;
   appState.shareDraft = null;
   appState.setupStep = 0;
   appState.setupRecipeId = null;
   appState.setupContacts = [{ name: '', phone: '' }, { name: '', phone: '' }];
   appState.setupError = '';
-  appState.setupFromSecret = false;
+  appState.setupPin = '';
+  appState.setupPinConfirm = '';
+  appState.portionInput = '';
+  appState.portionResults = null;
+  appState.timerDeadline = null;
+  appState.timerRecipeId = null;
 }

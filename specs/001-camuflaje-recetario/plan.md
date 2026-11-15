@@ -14,8 +14,11 @@
 | Sin conexión | Service worker + manifiesto (PWA) | Ya está; instalable desde el navegador |
 | Pruebas | **Vitest** (solo desarrollo) | Es la herramienta natural de Vite; cubre la lógica pura. Lo demás, checklist manual |
 | Despliegue | GitHub Pages por GitHub Actions | Gratis, HTTPS (necesario para instalar y geolocalizar) y enlace público para la entrega |
-| Entrada a configuración | Alias de hash neutro + 5 toques al título | Funciona sin backend y sin pista visible |
-| Acceso a orientación | Bienestar fuera de la navegación principal; acceso explícito «Bienestar y apoyo» desde Preferencias | Reduce su exposición casual sin borrar contenido ni depender de un gesto oculto; no se presenta como invisibilidad |
+| Acceso a orientación | Calculadora de porciones en una receta; el PIN de 6 dígitos creado en la configuración inicial abre Bienestar y apoyo | El recetario sigue siendo el flujo principal; el PIN es una barrera de discreción, no seguridad del dispositivo |
+| Protección de datos del PIN | PBKDF2-SHA-256 con sal aleatoria mediante Web Crypto; solo se guarda el verificador local | No se guarda el PIN en texto claro ni se envía al servidor; una persona con acceso técnico aún puede inspeccionar la app |
+| Cierre por inactividad | 60 segundos en configuración, Preferencias y Bienestar y apoyo | Cierra la vista sensible y limpia la conversación temporal; no borra el perfil |
+| Temporizador/check-in | Temporizador en una ficha de receta; al vencer, aviso y decisión manual de compartir | Una PWA no asegura tareas en segundo plano; nunca se envían mensajes ni ubicaciones automáticamente |
+| Tarjetas QR | Tarjeta impresa a doble cara para la demostración, QR verificado al MVP | Hace tangible la entrega de la app; el QR dirige solo al recetario público |
 | Claves de storage | No se renombran en este sprint | Evita migraciones con poco tiempo; riesgo documentado abajo |
 
 ## Arquitectura (lo que ya existe)
@@ -41,17 +44,17 @@ public/              ← manifest, service-worker, iconos, imágenes
 | `camuflaje.favorites` | recetas favoritas | Sí |
 | `camuflaje.profile` | receta de confianza y contactos | Sí |
 | `camuflaje.theme` | tema claro/oscuro | Sí |
-| `camuflaje.prefs` *(nueva, RF-17)* | tamaño de letra, vista, nombre | Sí |
-| `camuflaje.onboarded` *(nueva, RF-12)* | `"1"` si ya vio la configuración | **No**, para que no reaparezca sola |
+| `camuflaje.preferences` *(RF-17)* | tema, tamaño de letra, vista, nombre | Sí |
+| `camuflaje.setupCompleted` | `true` si ya completó o salió de la configuración | **No**, para que no reaparezca sola |
+| `camuflaje.portions` | sal y verificador derivado del PIN | Sí |
 
-> Ajustar al código real de `storage.js`: la clave `onboarded` va **fuera** del objeto de claves que borra `clearAppData()`.
+> La marca de configuración permanece fuera de las claves eliminadas por `clearAppData()`.
 
 ### Arranque y rutas (`main.js`)
 
-- Constantes `SETUP_HASH` y `DEMO_HASH` con valores neutros (ej. `#r-4821`, `#d-4821`; **cámbienlos antes de la demo**).
-- `route()` reconoce esos alias en lugar de `#setup` y `#demo`.
-- Al arrancar: si hay perfil previo y no hay marca, se marca; si no hay marca y no hay hash, `location.replace(SETUP_HASH)`.
-- Salir de la configuración (`skip-setup`, `quick-exit`, fin del paso 3, `leave-demo`, `clear-app-data`) llama `markOnboarded()` y `navigateToApp()` (que limpia el hash con `replaceState`).
+- La primera visita muestra la configuración; al completar se marca y no se vuelve a mostrar.
+- Los perfiles previos sin PIN pasan una vez por la configuración para crearlo.
+- Cinco toques al título del recetario en tres segundos abren solo la configuración para cambiar PIN/contactos; el gesto no abre Bienestar directamente.
 
 ### Pantalla de configuración (`views/setup.js`)
 
@@ -61,22 +64,30 @@ public/              ← manifest, service-worker, iconos, imágenes
   3. 🔒 No llama a emergencias ni te vigila. Tú decides cada envío.
 - Botón **"Salir rápido ✕"** fijo arriba a la derecha en todos los pasos (coral, texto blanco, ícono).
 - Paso de contactos: prefijo +51, `inputmode="numeric"`, 2 obligatorios, tercero opcional.
-- Paso final: indica cómo volver (gesto de 5 toques) y ofrece Demostración y **Borrar mis datos**.
+- Paso de PIN: 6 dígitos, confirmación y explicación de límites; el verificador local usa PBKDF2 con sal.
+- Paso final: explica que el apoyo se abre desde la calculadora después de ingresar el PIN.
 
-### Engranaje (`main.js`, `renderSettings`)
+### Calculadora de porciones y apoyo (`views/recipeDetail.js`, `main.js`)
 
-Preferencias conserva las opciones del recetario: tema (☀️/🌙), tamaño de letra, vista, nombre, limpiar favoritas e instalar. Añade un acceso separado, claramente identificado como «Bienestar y apoyo», que abre la vista de orientación existente. Se retiran los enlaces a configuración y demo, el borrado total y la frase "No ofrece monitoreo…". Este acceso secundario no es invisible ni una garantía de seguridad.
+- La calculadora ajusta cantidades numéricas y deja intactas expresiones cualitativas como "al gusto".
+- Si se introduce el PIN de 6 dígitos en el campo de porciones, abre la vista de Bienestar y apoyo.
+- Desde apoyo se pueden actualizar contactos/PIN o borrar los datos. El PIN no cifra el resto del almacenamiento ni resiste inspección del dispositivo.
 
-### Gesto secreto
+### Inactividad y temporizador
 
-- `<h1>` del encabezado con `data-action="title-tap"`; **sin** cambio de cursor, estilo ni `aria-label`.
-- Lógica pura en `src/utils/tapSequence.js` (recibe una función de hora para poder probarla): 5 toques, ventana de 1,5 s entre toques.
-- Accesibilidad: quien no pueda usar el gesto entra por el enlace que le da la facilitadora.
+- Un minuto sin interacción en configuración, Preferencias o apoyo devuelve al inicio y descarta el chat temporal.
+- Temporizador de 1 a 180 minutos en receta. Al vencer con la app abierta, el aviso ofrece «Ya está lista» o «Compartir receta». La usuaria todavía elige destinatario y confirma en WhatsApp; ubicación sigue siendo opcional y explícita.
+- Si la app se cierra o suspende, no se garantiza el aviso. No se implementa envío automático ni ubicación en segundo plano.
+
+### Tarjetas para el pitch
+
+- Anverso: receta real de la app; reverso: QR a la URL pública y URL impresa como alternativa.
+- Generar el QR localmente y escanearlo desde otro teléfono antes de imprimir. No poner datos personales ni textos que presenten la app como una app de emergencia.
 
 ## Pruebas
 
-- **Vitest + jsdom** para: `onboarding` (marca y migración), `tapSequence`, normalización de teléfono y `contactMessageURL`, y `clearAppData`.
-- **Checklist manual** (`docs/PRUEBAS-MANUALES.md`, a crear en T13) en un celular real: primera apertura, salir rápido, recarga, gesto, borrar, instalar, modo sin conexión, ubicación, WhatsApp.
+- Validar PIN, calculadora, temporizador, auto-cierre, QR, normalización de teléfono y `clearAppData` con pruebas unitarias cuando exista el runner aprobado.
+- **Checklist manual** (`docs/PRUEBAS-MANUALES.md`) en un celular real: alta y migración de PIN, acceso de apoyo, cierre a 60 s, temporizador con y sin app activa, QR, instalar, modo sin conexión, ubicación y WhatsApp.
 - Para la receta de confianza se usa una redacción provisional que no invita a acudir a ningún lugar; validarla con Makipuray antes del uso real (P-2).
 
 ## Despliegue
@@ -85,13 +96,14 @@ Preferencias conserva las opciones del recetario: tema (☀️/🌙), tamaño de
 - Revisar que el service worker y el manifiesto usen rutas relativas; **subir la versión del caché** en cada entrega.
 - Workflow de GitHub Actions: `npm ci` → `npm run build` → publicar `dist/` en Pages.
 - Verificar en celular real: HTTPS, instalación, sin conexión y permiso de ubicación.
-- Verificar en ≈360 px y escritorio que Bienestar no figura en la navegación principal, que «Bienestar y apoyo» está disponible en Preferencias y que artículos, teléfonos y asistente siguen accesibles.
+- Verificar en ≈360 px que calculadora y temporizador son usables, que el PIN abre el contenido, que Preferencias no muestra Bienestar y que el cierre por inactividad funciona.
 
 ## Riesgos y mitigaciones
 
 | Riesgo | Mitigación |
 |---|---|
-| Alguien con el celular abre el enlace oculto y ve los contactos guardados | Documentado como límite; mitigación futura: PIN o no precargar contactos |
+| Alguien con acceso técnico inspecciona el PIN o los datos locales | El verificador lleva sal; se documenta que el PIN no es seguridad del dispositivo y se valida con usuarias antes de un piloto |
+| Temporizador se interpreta como alerta confiable o envío automático | Aviso solo en primer plano, confirmación manual y límite visible en UI/docs |
 | Las claves `camuflaje.*` delatan la app al inspeccionar el navegador | Documentado; renombrar en la fase de planeación (dic) |
 | Mensaje de WhatsApp queda en el historial | Orientación: mensajes temporales o borrar el chat |
 | Puntos del mapa de ejemplo se confunden con reales | Etiqueta "ejemplo no verificado" visible; verificar con Makipuray antes de lanzar |

@@ -20,25 +20,38 @@ Si quien la agrede o la controla revisa su celular, escribir "ayuda" o abrir una
 - **La receta es una petición de ayuda disimulada.** Quien agrede o controla puede revisar su celular, y ella no puede escribir "ayuda" ni llamar. La app prepara un mensaje que parece una conversación cotidiana sobre una receta; ella revisa el texto, elige a una persona de confianza y decide si abrir WhatsApp para enviarlo. Por el acuerdo previo, el mensaje significa: *"te necesito ahora"*.
 - **Un acuerdo previo, en persona, define qué hacer y qué no.** No es para ocultarle algo al contacto, sino para que sepa responder sin ponerse en riesgo ni delatarla.
 - **Se ve como un recetario normal.** Búsqueda, categorías, favoritas y fichas de receta. No hay botones ni textos de emergencia a la vista.
-- **Configuración de una sola vez**, con explicación clara, un botón de **Salir rápido** y un acceso discreto para volver a cambiar sus datos.
+- **Configuración inicial de una sola vez**, con explicación clara, un botón de **Salir rápido** y creación de un PIN de 6 dígitos. La configuración y los datos pueden actualizarse después de entrar al área de apoyo.
 - **Control total de la usuaria.** Revisa el mensaje antes de enviarlo y la ubicación se comparte solo si ella lo decide, cada vez.
-- **Orientación dentro del mismo recetario:** artículos breves, teléfonos de apoyo en Perú y un asistente de respuestas predefinidas, disponibles desde el apartado **Bienestar y apoyo** en Preferencias.
+- **Orientación dentro del mismo recetario:** artículos breves, teléfonos de apoyo en Perú y un asistente de respuestas predefinidas, disponibles desde la calculadora de porciones tras introducir el PIN.
+- **Funciones de cocina útiles:** calculadora de porciones y temporizador. El temporizador puede servir como recordatorio de llegada; al vencer, la usuaria decide si comparte una receta.
 - **Pensada para acompañarse "de mano en mano":** una facilitadora puede entregar la app, hacer la configuración junto con la usuaria y explicarle el acuerdo.
 
 ## Cómo probarlo en 2 minutos
 
 1. Abre el enlace del prototipo en tu celular (idealmente en modo incógnito, para ver la primera vez).
-2. Verás la **configuración inicial**: tres tarjetas, elige una receta de confianza y anota dos contactos de prueba. Prueba también **Salir rápido**.
+2. Verás la **configuración inicial**: tres tarjetas, elige una receta de confianza, anota dos contactos de prueba y crea un PIN de prueba de 6 dígitos. Prueba también **Salir rápido**.
 3. Explora el recetario: no hay pistas de la función de ayuda.
 4. Abre una receta, compártela con tu contacto de prueba y revisa el **mensaje antes de enviarlo**. Prueba incluir la ubicación.
-5. Abre **Preferencias → Bienestar y apoyo**: lee los artículos y teléfonos de apoyo y prueba el asistente (*"tengo miedo"*). El acceso es secundario; no vuelve invisible la aplicación.
-6. Instálala desde el navegador ("Añadir a pantalla de inicio") y ábrela sin conexión.
+5. Abre una receta, usa la **Calculadora de porciones** y escribe el PIN en el campo de porciones. Se abrirán los artículos, teléfonos de apoyo y el asistente (*"tengo miedo"*). En esta sección, prueba el cierre por 60 segundos de inactividad.
+6. Inicia el temporizador de cocina y espera su aviso. Elige «Compartir receta» para revisar el mensaje; el envío y la ubicación no son automáticos.
+7. Instálala desde el navegador ("Añadir a pantalla de inicio") y ábrela sin conexión.
 
-> Usa **solo datos de prueba**. La forma de reabrir la configuración se muestra en la demo en vivo.
+> Usa **solo datos de prueba**. El PIN no cifra los datos ni protege contra quien inspeccione el navegador o el dispositivo.
+
+## Tarjeta de receta con QR para el pitch
+
+Lleven una tarjeta impresa por ambas caras: delante, una receta real del prototipo (por ejemplo, lomo saltado); detrás, un QR a la URL pública del MVP y una frase cotidiana como «Escanea para ver más recetas». El QR debe abrir `https://yadiraverasalinas-hub.github.io/warmi-innovathon-grupo17/`.
+
+Generen el QR localmente desde el navegador o con una herramienta sin seguimiento, guarden la imagen e intégrenla al diseño de impresión. Antes de imprimir, escanéenlo desde otro teléfono y confirmen que abre la app publicada; incluyan también la URL legible como alternativa. No agreguen nombres, teléfonos ni ubicaciones reales a la tarjeta. Entréguenla al jurado después de explicar la receta y el flujo de la app.
 
 ## Lo que no hacemos (y lo decimos)
 
 - **No es una app de emergencia.** No llama a emergencias, no vigila y no monitorea.
+- El PIN local es una barrera de discreción, **no una contraseña segura**; no impide que alguien con acceso al dispositivo inspeccione la aplicación o sus datos.
+- El PIN no se puede recuperar en este prototipo. Si se olvida, borrar los datos del navegador también elimina contactos y preferencias guardados.
+- No se añade un directorio de psicólogas con datos sin verificar; cualquier servicio de orientación debe validarse con la organización correspondiente antes de publicarse.
+- Para volver a la configuración y gestionar el PIN o los contactos, toca cinco veces el título del recetario en menos de tres segundos. Este acceso discreto no es una protección de seguridad.
+- El temporizador requiere que la app siga abierta y no manda una alerta confiable al cerrarse o suspenderse. Cuando vence, solo muestra un aviso y la usuaria decide si comparte algo.
 - **Discreta no es invisible.** Alguien con acceso al celular podría abrirla o revisar lo guardado en el navegador.
 - El mensaje enviado **queda en el historial de WhatsApp**; recomendamos activar mensajes temporales en ese chat o borrarlo.
 - Los puntos del mapa son **ejemplos no verificados**; no son lugares seguros.
@@ -49,6 +62,7 @@ Si quien la agrede o la controla revisa su celular, escribir "ayuda" o abrir una
 
 - Favoritas, contactos y preferencias se guardan **solo en el dispositivo** (almacenamiento local del navegador). No hay servidor ni cuentas.
 - La ubicación se pide **solo tras una acción explícita**; no se guarda ni se comparte en segundo plano.
+- El PIN se guarda como verificación derivada con sal en el almacenamiento local; no se guarda el PIN en texto claro ni se envía a un servidor.
 - "Borrar mis datos" elimina lo guardado por esta app.
 - Sin analítica ni rastreadores. El modo sin conexión guarda solo los recursos de la propia app.
 
@@ -61,8 +75,9 @@ npm install
 npm run dev        # desarrollo
 npm run build      # producción
 npm run preview    # revisar el build
-npm test           # pruebas
 ```
+
+Las pruebas manuales y los límites del prototipo están descritos en [`docs/PRUEBAS-MANUALES.md`](docs/PRUEBAS-MANUALES.md).
 
 ```
 src/
@@ -81,7 +96,7 @@ Spec-Driven Development: **sin spec no hay código**. Cada issue y PR cita su re
 
 | Cuándo | Qué |
 |---|---|
-| **Dic 2026** | Co-diseño con Makipuray: validar el mensaje de la señal y los contenidos con facilitadoras; verificar con organizaciones locales los puntos de ayuda reales; mejorar protección de la configuración (PIN) y nombres neutros de almacenamiento |
+| **Dic 2026** | Co-diseño con Makipuray: validar el mensaje de la señal y los contenidos con facilitadoras; verificar con organizaciones locales los puntos de ayuda reales y evaluar si hace falta una protección más robusta que el PIN local |
 | **Ene–mar 2027** | Piloto acompañado con beneficiarias, entrega con facilitadoras y monitoreo del impacto |
 
 ## Equipo

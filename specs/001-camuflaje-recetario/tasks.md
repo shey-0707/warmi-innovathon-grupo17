@@ -11,11 +11,11 @@
 - [ ] **T1. Subir docs al repo** (AGENTS, constitución, spec, plan, tareas) · Área: docs y pitch · Issue: #__ · Dueña: __
   Hecho cuando: los 5 archivos están en `main` por PR y el equipo los revisó.
 
-- [ ] **T2. Servicio de "ya configurada"** (RF-12) · Área: backend y datos · Issue: #__ · Dueña: __
-  Hecho cuando: existen `isOnboarded()` y `markOnboarded()` fuera de las claves que borra `clearAppData()`; con perfil previo se marca sola; prueba unitaria en verde.
+- [ ] **T2. Servicio de configuración completada** (RF-12) · Área: backend y datos · Issue: #__ · Dueña: __
+  Hecho cuando: `markSetupCompleted()` conserva el estado fuera de las claves que borra `clearAppData()`; un perfil previo sin PIN puede completar la migración.
 
-- [ ] **T3. Arranque y rutas con alias neutros** (RF-11, RF-12, RF-15) · Área: frontend · Issue: #__ · Dueña: __
-  Hecho cuando: con storage vacío "/" abre la configuración; `route()` usa `SETUP_HASH` y `DEMO_HASH`; recargar tras salir no la reabre.
+- [ ] **T3. Arranque y configuración de una sola vez** (RF-11, RF-12) · Área: frontend · Issue: #__ · Dueña: __
+  Hecho cuando: con storage vacío "/" abre la configuración; tras completar o salir no se reabre sola; perfiles anteriores pueden crear el PIN inicial.
 
 - [ ] **T4. Diseño: primera pantalla en tres tarjetas** (RF-11) · Área: diseño · Issue: #__ · Dueña: __
   Hecho cuando: hay boceto con las 3 tarjetas (ícono + una frase) y la lista de recetas, sin bloques de texto largos; aprobado por el equipo.
@@ -29,13 +29,13 @@
 ## Día 2 · Viernes 13
 
 - [ ] **T7. Limpiar el engranaje** (RF-14) · Área: frontend · Issue: #__ · Dueña: __
-  Hecho cuando: Ajustes solo ofrece tema (☀️/🌙) e instalar; no quedan textos de configuración, demo, borrado ni "monitoreo".
+  Hecho cuando: Preferencias conserva las opciones del recetario pero no ofrece Bienestar, acceso a configuración ni borrado total.
 
-- [ ] **T8. Gesto de 5 toques al título** (RF-15) · Área: frontend + backend y datos · Issue: #__ · Dueña: __ · Depende de T3
-  Hecho cuando: `tapSequence.js` con prueba (5 toques <1,5 s abren; con pausa, no); el título no se ve interactivo.
+- [ ] **T8. Acceso PIN desde calculadora** (RF-15, RF-19) · Área: frontend + backend y datos · Issue: #__ · Dueña: __ · Depende de T3
+  Hecho cuando: la calculadora ajusta porciones y solo el PIN correcto abre apoyo; el PIN incorrecto no confirma el resultado.
 
-- [ ] **T9. Demo y borrado dentro de la configuración** (RF-16) · Área: frontend · Issue: #__ · Dueña: __ · Depende de T2, T3
-  Hecho cuando: la configuración ofrece "Ver demostración" y "Borrar mis datos"; al borrar vuelve al recetario, quita el hash y no reabre la configuración.
+- [ ] **T9. Actualización y borrado desde apoyo** (RF-16) · Área: frontend · Issue: #__ · Dueña: __ · Depende de T2, T3, T8
+  Hecho cuando: tras validar el PIN se pueden actualizar contactos/PIN o borrar los datos; al borrar vuelve al recetario.
 
 - [ ] **T10. Despliegue en GitHub Pages** (RF-9) · Área: despliegue · Issue: #__ · Dueña: __
   Hecho cuando: hay enlace público con HTTPS; `base` correcto; workflow en verde; el service worker sube versión de caché.
@@ -45,17 +45,17 @@
 
 ## Día 3 · Sábado 14
 
-- [ ] **T12. Pruebas con Vitest** (RF-4, 5, 10, 12, 15, 18) · Área: pruebas · Issue: #__ · Dueña: __
-  Hecho cuando: `npm test` corre en verde con pruebas de onboarding, tapSequence, teléfono/mensaje y borrado.
+- [ ] **T12. Pruebas con Vitest** (RF-4, 5, 10, 12, 15, 18–21) · Área: pruebas · Issue: #__ · Dueña: __
+  Hecho cuando: `npm test` corre en verde con pruebas de PIN, calculadora, temporizador, auto-cierre, teléfono/mensaje y borrado.
 
-- [ ] **T13. Checklist manual en celular real** (RF-11 al 16) · Área: pruebas · Issue: #__ · Dueña: __
+- [ ] **T13. Checklist manual en celular real** (RF-11 al 22) · Área: pruebas · Issue: #__ · Dueña: __
   Hecho cuando: `docs/PRUEBAS-MANUALES.md` existe y se ejecutó completo en un Android y un iPhone (o dos navegadores móviles), con resultados anotados.
 
 - [ ] **T14. Contactos con +51 y tercero opcional** (RF-18) · Área: frontend · Issue: #__ · Dueña: __
   Hecho cuando: el prefijo viene puesto, el teclado es numérico, con 1 contacto no se continúa y el tercero se agrega con "+ Agregar otra".
 
 - [ ] **T15. Opciones extra del engranaje** (RF-17, *Could*) · Área: frontend · Issue: #__ · Dueña: __
-  Hecho cuando: tamaño de letra, vista cuadros/lista, nombre y "limpiar favoritas" funcionan y persisten en `camuflaje.prefs`. *Si no hay tiempo, se descarta sin afectar la entrega.*
+  Hecho cuando: tamaño de letra, vista cuadros/lista, nombre y "limpiar favoritas" funcionan y persisten en `camuflaje.preferences`. *Si no hay tiempo, se descarta sin afectar la entrega.*
 
 - [ ] **T16. README final** · Área: docs y pitch · Issue: #__ · Dueña: __
   Hecho cuando: el README explica el problema, cómo probar el MVP, límites de seguridad y siguientes pasos, y lo puede leer alguien que no conoce el proyecto.
@@ -71,9 +71,26 @@
 - [ ] **T18. Congelar y revisar entrega** · Área: despliegue + pruebas · Issue: #__ · Dueña: __
   Hecho cuando: a las 6 p. m. `main` queda congelado; con la skill `revisar-entrega` no falta nada: enlace del MVP activo, repositorio con README, pitch listo; entrega enviada antes de las 11:59 p. m.
 
+## Alcance añadido: PIN, temporizador y material del pitch
+
+- [ ] **T24. Acceso discreto a la configuración** (RF-23) · Área: frontend · Issue: #__ · Dueña: __
+  Hecho cuando: cinco toques al título en tres segundos abren la configuración; el acceso no está anunciado en la interfaz ni abre Bienestar.
+
+- [ ] **T20. PIN de apoyo y calculadora de porciones** (RF-15, RF-19) · Área: frontend + privacidad · Issue: #__ · Dueña: __
+  Hecho cuando: la usuaria configura un PIN en el alta, la calculadora ajusta cantidades y el PIN abre el apoyo sin aparecer en Preferencias.
+
+- [ ] **T21. Cierre por inactividad** (RF-20) · Área: frontend · Issue: #__ · Dueña: __
+  Hecho cuando: configuración, Preferencias y apoyo vuelven al recetario tras 60 segundos sin interacción.
+
+- [ ] **T22. Temporizador de cocina/check-in** (RF-21) · Área: frontend + seguridad · Issue: #__ · Dueña: __
+  Hecho cuando: el vencimiento activo muestra opciones manuales y no envía mensajes ni ubicación automáticamente; limitación PWA explicada.
+
+- [ ] **T23. Tarjeta impresa con QR** (RF-22) · Área: docs y pitch · Issue: #__ · Dueña: __
+  Hecho cuando: anverso tiene receta real, reverso QR verificado y URL de respaldo; se entrega al jurado.
+
 ## Orden de prioridad
 
-1. **Must:** T1, T2, T3, T4, T5, T6, T7, T8, T9, T10 (RF-11 al 16)
-2. **Should:** T11, T12, T13, T14, T19 (validación, pruebas, RF-18, guía del acuerdo)
+1. **Must:** T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T20, T21, T24 (RF-11 al 20 y RF-23)
+2. **Should:** T11, T12, T13, T14, T19, T22, T23 (validación, pruebas, RF-18, RF-21, RF-22 y guía del acuerdo)
 3. **Could:** T15 (RF-17 extras)
 4. **Entrega:** T16, T17, T18

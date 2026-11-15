@@ -7,7 +7,8 @@ export function renderWellbeing(state) {
     : '<div class="message">¡Hola! Puedo darte consejos de cocina o escucharte con calma.</div>';
 
   return `<section class="wellbeing" aria-labelledby="wellbeing-title">
-    <h2 id="wellbeing-title" class="section-title">Cocina y bienestar</h2>
+    <h2 id="wellbeing-title" class="section-title">Bienestar y apoyo</h2>
+    <p class="note">Recursos de orientación y teléfonos; el asistente ofrece respuestas predefinidas y no reemplaza atención profesional.</p>
     ${wellbeingArticles.map((article) => `<details><summary>${escapeHTML(article.title)}</summary><p>${escapeHTML(article.body)}</p></details>`).join('')}
     <section class="panel">
       <h3>Teléfonos útiles en Perú</h3>
@@ -24,5 +25,7 @@ export function renderWellbeing(state) {
         <button class="button" type="submit">Enviar</button>
       </form>
     </section>
+    <button class="button secondary full" type="button" data-action="edit-setup">Actualizar contactos o PIN</button>
+    <button class="button secondary full" type="button" data-action="clear-app-data">Borrar mis datos guardados</button>
   </section>`;
 }
