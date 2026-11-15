@@ -1,7 +1,6 @@
 .settings-actions { display: grid; gap: 9px; }
 .settings-actions .button { width: 100%; }
-.wellbeing-backbar { margin: 0 0 12px; }
-.wellbeing-back-button { min-width: 44px; min-height: 44px; padding: 4px 0; border: 0; color: var(--accent); background: transparent; font-weight: 650; text-align: left; }
+.wellbeing-backbar { position: sticky; z-index: 8; top: 0; display: flex; justify-content: flex-end; margin: -18px -16px 12px; padding: 10px 16px; background: var(--bg); }
 .timer-panel { margin: 14px 0; padding: 13px; border: 1px solid var(--line); border-radius: 14px; background: var(--card); }
 .timer-form label, .portion-form label { display: block; margin: 0 0 7px; font-size: .88rem; font-weight: 650; }
 .timer-controls { display: flex; gap: 8px; }

@@ -16,7 +16,7 @@
 | Despliegue | GitHub Pages por GitHub Actions | Gratis, HTTPS (necesario para instalar y geolocalizar) y enlace público para la entrega |
 | Acceso a orientación | Calculadora de porciones en una receta; el PIN de 6 dígitos creado en la configuración inicial abre Bienestar y apoyo | El recetario sigue siendo el flujo principal; el PIN es una barrera de discreción, no seguridad del dispositivo |
 | Protección de datos del PIN | PBKDF2-SHA-256 con sal aleatoria mediante Web Crypto; solo se guarda el verificador local | No se guarda el PIN en texto claro ni se envía al servidor; una persona con acceso técnico aún puede inspeccionar la app |
-| Cierre por inactividad | 60 segundos en configuración, Preferencias y Bienestar y apoyo | Cierra la vista sensible y limpia la conversación temporal; no borra el perfil |
+| Retorno al recetario | 60 segundos sin actividad en vistas sensibles; al quedar oculta la app desde cualquier vista | Vuelve al recetario y limpia el contenido temporal; no borra el perfil |
 | Temporizador/check-in | Temporizador en una ficha de receta; al vencer, aviso y decisión manual de compartir | Una PWA no asegura tareas en segundo plano; nunca se envían mensajes ni ubicaciones automáticamente |
 | Tarjetas QR | Tarjeta impresa a doble cara para la demostración, QR verificado al MVP | Hace tangible la entrega de la app; el QR dirige solo al recetario público |
 | Claves de storage | No se renombran en este sprint | Evita migraciones con poco tiempo; riesgo documentado abajo |

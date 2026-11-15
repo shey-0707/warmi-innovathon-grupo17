@@ -55,6 +55,7 @@ No es una app de emergencia: es un recetario que sigue siendo un recetario. **La
 - **RF-21 (Should):** CUANDO la usuaria inicia un temporizador desde una receta y la app sigue abierta al vencer, EL SISTEMA muestra un aviso con las opciones «Ya está lista» y «Compartir receta». Compartir requiere que la usuaria elija destinatario y confirme en WhatsApp; ubicación solo se solicita mediante una acción explícita. El temporizador no envía alertas en segundo plano.
 - **RF-22 (Should):** PARA el pitch, EL EQUIPO prepara una tarjeta impresa por ambas caras: una receta del prototipo y un QR verificado que abre la URL pública. La tarjeta no contiene datos personales ni presenta la app como servicio de emergencia.
 - **RF-23 (Must):** CUANDO la usuaria toca cinco veces el título del recetario en un intervalo de tres segundos, EL SISTEMA abre la configuración para gestionar el PIN y los contactos, sin abrir directamente Bienestar y apoyo ni mostrar una pista visible de este acceso.
+- **RF-24 (Must):** CUANDO el navegador informa que la app quedó oculta (por cambio de app/pestaña o bloqueo de pantalla), EL SISTEMA vuelve al inicio del recetario y descarta el contenido temporal de la vista. En Bienestar y apoyo, EL SISTEMA mantiene visible un botón «Salir rápido» para volver al recetario manualmente.
 
 ## Reglas de seguridad y límites
 
@@ -95,6 +96,7 @@ No es una app de emergencia: es un recetario que sigue siendo un recetario. **La
 | RF-21 | Con la app abierta vence el temporizador y aparece el aviso; no sale ningún mensaje ni ubicación hasta que se elija y confirme | Manual |
 | RF-22 | Escanear el QR impreso desde otro teléfono; abre el MVP público y la URL de respaldo es legible | Manual |
 | RF-23 | Cinco toques rápidos al título abren la configuración; menos de cinco o toques separados no la abren | Manual |
+| RF-24 | Desde cualquier vista, cambiar de app/pestaña o bloquear la pantalla regresa al inicio al volver; en Bienestar, «Salir rápido» permanece accesible al desplazarse | Manual en móvil; depende de los eventos de ciclo de vida que notifique el navegador |
 
 ## Preguntas abiertas
 

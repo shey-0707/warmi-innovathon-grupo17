@@ -76,6 +76,9 @@
 - [ ] **T24. Acceso discreto a la configuración** (RF-23) · Área: frontend · Issue: #__ · Dueña: __
   Hecho cuando: cinco toques al título en tres segundos abren la configuración; el acceso no está anunciado en la interfaz ni abre Bienestar.
 
+- [ ] **T25. Salida al pasar a segundo plano** (RF-24) · Área: frontend · Issue: #__ · Dueña: __
+  Hecho cuando: cualquier vista vuelve al recetario al ocultarse la app; el botón «Salir rápido» permanece accesible en Bienestar.
+
 - [ ] **T20. PIN de apoyo y calculadora de porciones** (RF-15, RF-19) · Área: frontend + privacidad · Issue: #__ · Dueña: __
   Hecho cuando: la usuaria configura un PIN en el alta, la calculadora ajusta cantidades y el PIN abre el apoyo sin aparecer en Preferencias.
 
@@ -90,7 +93,7 @@
 
 ## Orden de prioridad
 
-1. **Must:** T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T20, T21, T24 (RF-11 al 20 y RF-23)
+1. **Must:** T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T20, T21, T24, T25 (RF-11 al 20 y RF-23–24)
 2. **Should:** T11, T12, T13, T14, T19, T22, T23 (validación, pruebas, RF-18, RF-21, RF-22 y guía del acuerdo)
 3. **Could:** T15 (RF-17 extras)
 4. **Entrega:** T16, T17, T18

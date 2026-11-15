@@ -113,7 +113,7 @@ function renderApp() {
   }
 
   const header = appState.tab === 'well'
-    ? '<header class="wellbeing-backbar"><button class="wellbeing-back-button" type="button" data-action="exit-wellbeing">‹ Volver al recetario</button></header>'
+    ? '<header class="wellbeing-backbar"><button class="button quick-exit" type="button" data-action="quick-exit"><span aria-hidden="true">↗</span> Salir rápido</button></header>'
     : `<header class="topbar"><div><h1${appState.tab === 'home' && !appState.recipeId ? ' data-action="secret-setup"' : ''}>${escapeHTML(title[0])}</h1>${title[1] ? `<p>${escapeHTML(title[1])}</p>` : ''}</div>
       <button class="icon-button" type="button" data-action="open-settings" aria-label="Preferencias">⚙</button>
     </header>`;
@@ -151,6 +151,54 @@ function navigateToApp() {
   appState.setupPinConfirm = '';
   history.replaceState(null, '', `${location.pathname}${location.search}`);
   renderApp();
+}
+
+function returnToRecipes() {
+  try {
+    markSetupCompleted();
+  } catch (error) {
+    console.error(error);
+    if (!document.hidden) showToast(error.message);
+  }
+  initialSetupRequired = false;
+  appState.mode = 'app';
+  appState.tab = 'home';
+  appState.recipeId = null;
+  appState.category = 'Todas';
+  appState.query = '';
+  appState.selectedPoint = null;
+  appState.modal = null;
+  appState.chat = [];
+  appState.supportUnlocked = false;
+  appState.location = null;
+  appState.shareDraft = null;
+  appState.setupStep = 0;
+  appState.setupRecipeId = null;
+  appState.setupContacts = [{ name: '', phone: '' }, { name: '', phone: '' }];
+  appState.setupError = '';
+  appState.setupPin = '';
+  appState.setupPinConfirm = '';
+  appState.portionInput = '';
+  appState.portionResults = null;
+  history.replaceState(null, '', `${location.pathname}${location.search}`);
+  renderApp();
+  if (!document.hidden) window.scrollTo(0, 0);
+}
+
+function isAtRecipeHome() {
+  return appState.mode === 'app'
+    && appState.tab === 'home'
+    && !appState.recipeId
+    && !appState.modal
+    && !appState.shareDraft;
+}
+
+function handleVisibilityChange() {
+  if (document.hidden) {
+    if (!isAtRecipeHome()) returnToRecipes();
+  } else if (appState.modal === 'timer-reminder') {
+    returnToRecipes();
+  }
 }
 
 function startSetup() {
@@ -304,16 +352,6 @@ async function handleClick(event) {
       appState.modal = 'settings';
       lastSensitiveActivity = Date.now();
       renderApp();
-      break;
-    case 'exit-wellbeing':
-      appState.tab = 'home';
-      appState.recipeId = null;
-      appState.modal = null;
-      appState.chat = [];
-      appState.supportUnlocked = false;
-      appState.shareDraft = null;
-      renderApp();
-      window.scrollTo(0, 0);
       break;
     case 'edit-setup':
       if (!appState.supportUnlocked || appState.tab !== 'well') break;
@@ -513,13 +551,7 @@ async function handleClick(event) {
       }
       break;
     case 'quick-exit':
-      try {
-        markSetupCompleted();
-      } catch (error) {
-        console.error(error);
-        showToast(error.message);
-      }
-      navigateToApp();
+      returnToRecipes();
       break;
     case 'install-app':
       if (!deferredInstallPrompt) break;
@@ -704,19 +736,7 @@ function recordSensitiveActivity() {
 }
 
 function closeInactiveScreen() {
-  appState.mode = 'app';
-  appState.tab = 'home';
-  appState.recipeId = null;
-  appState.modal = null;
-  appState.shareDraft = null;
-  appState.chat = [];
-  appState.supportUnlocked = false;
-  appState.setupStep = 0;
-  appState.setupPin = '';
-  appState.setupPinConfirm = '';
-  appState.portionResults = null;
-  history.replaceState(null, '', `${location.pathname}${location.search}`);
-  renderApp();
+  returnToRecipes();
 }
 
 root.addEventListener('pointerdown', recordSensitiveActivity);
@@ -725,6 +745,11 @@ root.addEventListener('keydown', recordSensitiveActivity);
 root.addEventListener('change', recordSensitiveActivity);
 
 window.addEventListener('hashchange', route);
+document.addEventListener('visibilitychange', handleVisibilityChange);
+window.addEventListener('pagehide', () => {
+  if (!isAtRecipeHome()) returnToRecipes();
+});
+window.addEventListener('pageshow', handleVisibilityChange);
 window.addEventListener('beforeinstallprompt', (event) => {
   event.preventDefault();
   deferredInstallPrompt = event;
